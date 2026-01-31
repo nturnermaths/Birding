@@ -1,4 +1,8 @@
 %% Audio Analysis - Birding Article
+% Birds on Holiday - Mathematics Today, March 2026
+% Written in MATLAB 2023b
+% Requires audio file input to run:
+%   European-Goldfinch-ML181668.wav
 clear
 
 % Plot Controls
@@ -21,10 +25,6 @@ tic
 
 % Set maximum time for plotting audio file
 lenSetHS = 11;
-% audioHS = audioHS(1:lenSetHS*FsHS);
-
-% Re-save the clipped audio file
-% audiowrite("European-Goldfinch-June2025-Clipped.wav",audioHS,FsHS);
 
 % Playback data
 pbHS = audioplayer(audioHS,FsHS);
@@ -33,15 +33,18 @@ pbHS = audioplayer(audioHS,FsHS);
 % Audio file properties
 lenHS = length(audioHS)/FsHS;
 
-% Compute STFT of signal
+%% STFT Processing
+% fftLen: 2^7, 2^9, 2^11, 2^13
 fftLen = 2^7;
+% winLen: 128, 512
 winLen = 128;
+% Default Window: [ Window=hann(128,"periodic") ]
 [sHS, fHS, tHS] = stft(audioHS,FsHS,FFTLength=fftLen,Window=hann(winLen,"periodic"));
-% Default = [ Window=hann(128,"periodic") ]
+
 % Convert to one-sided spectrum
 fHS = fHS(fftLen/2 : end);
 sHS = sHS(fftLen/2 : end,:);
-% Curtail signal in time & frequency domain
+% Clip signal output in time & frequency domain
 fMax = 10e3;
 tMax = lenSetHS;
 tHS = tHS(tHS < tMax);
@@ -55,7 +58,7 @@ sHS = sHS(fHS < fMax,tHS < tMax);
 % Find abs value for plotting amplitude
 sHSmag = abs(sHS);
 
-%% Plot Original Recording Data
+%% Plot Spectrogram
 
 if STFTplotOn == 1
     % Plot data on spectrogram
@@ -89,9 +92,12 @@ end
 % sampling frequency FsHS
 % Wavelet transform options: 'morse', 'amor', 'bump'
 wTr = 'morse';
+% vpo: 10, .. 48
 vpo = 48;
 [wHS, fWav] = cwt(audioHS, wTr, FsHS, VoicesPerOctave=vpo);
 
+
+%% Plot Scalogram
 if SGrmPlotOn == 1
     figure('WindowState','maximized','Color','white')
     cwt(audioHS, wTr, FsHS, VoicesPerOctave=vpo);
@@ -117,18 +123,24 @@ end
 % Find abs value for amplitude
 wHSmag = abs(wHS);
 
-%% Generate and plot Morse wavelet example
+%% Generate and Plot Morse Wavelet example
 
+% Wavelet filterbank for loaded signal
+% Morse [beta,gamma]
 fb = cwtfilterbank('Wavelet', 'Morse', 'SignalLength', 508800, ...
                      'WaveletParameters',[3,60],'VoicesPerOctave',48);
+% Wavelets in time domain for all in filterbank
 [psiWav, tWav] = wavelets(fb);
+
+% Plot selected Morse wavelet from filterbank
 figure('WindowState','maximized','Color','white')
-% Choose wavelet no. to plot
+% Choose wavelet no. to plot (Max = 770)
 indWav = 700;
 realWav = real(psiWav(indWav,:));
 imagWav = imag(psiWav(indWav,:));
 magWav = sqrt(realWav.^2 + imagWav.^2);
 maxAmp = magWav(length(magWav)/2);
+
 plot(tWav, realWav, 'r', 'LineWidth', 2)
 hold on
 plot(tWav, imagWav, 'b', 'LineWidth', 2)
@@ -141,56 +153,5 @@ xlabel('Time Sample Index')
 ylabel('Magnitude')
 % ylim([-8e-4 8e-4])
 fontsize(gca,30,"points")
-
-%% Backup: Bandpass Filter Example
-
-% %% Apply Band Pass Filter
-% % Apply band pass filter
-% % Filter out collared dove < 750 Hz
-% fPass = [2000 10000];
-% audioHS = bandpass(audioHS,fPass,FsHS);
-% 
-% % Playback data
-% pbHSbp = audioplayer(audioHS,FsHS);
-% % play(pbHSbp);
-% 
-% % Compute STFT of signal
-% [sHS, fHS, tHS] = stft(audioHS,FsHS,FFTLength=fftLen);
-% % Convert to one-sided spectrum
-% fHS = fHS(fftLen/2 : end);
-% sHS = sHS(fftLen/2 : end,:);
-% % Curtail signal in time & frequency domain
-% tHS = tHS(tHS < tMax);
-% fHS = fHS(fHS < fMax);
-% sHS = sHS(fHS < fMax,tHS < tMax);
-% 
-% % Set dB reference and convert to dB
-% sHSmag = mag2db(abs(sHS/dBref));
-% 
-% % Re-save the bandpassed audio file
-% audiowrite("European-Goldfinch-ML181668-Bandpass.wav",audioHS,FsHS);
-
-
-% %% Plot Bandpass Data
-% 
-% if plotOn == 1
-%     % Plot data on spectrogram
-%     figure('WindowState','maximized')
-%     meshHS = mesh(tHS,fHS,sHSmag);
-%     hold on
-%     pbaspect([2 1 1]);
-%     % Plot up to 10 kHz
-%     plotFmax = 10e3;
-%     plotTmax = tMax;
-%     xlim([0 plotTmax])
-%     ylim([0 plotFmax])
-%     xlabel('Time (s)')
-%     ylabel('Frequency (Hz)')
-%     zlabel('Amplitude (dB)')
-%     view(2)
-%     colorbar
-%     clim([20 100])
-%     hold off
-% end
 
 toc
