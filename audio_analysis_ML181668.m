@@ -14,6 +14,10 @@ STFTplotOn = 1;
 SGrmPlotOn = 1;
 % SGrmPlotOn = 0;
 
+% Filter Bank
+% genFiltBank = 1;
+genFiltBank = 0;
+
 % Close all figures if creating new plots
 if STFTplotOn == 1 || SGrmPlotOn == 1
     close all
@@ -35,7 +39,7 @@ lenHS = length(audioHS)/FsHS;
 
 %% STFT Processing
 % fftLen: 2^7, 2^9, 2^11, 2^13
-fftLen = 2^7;
+fftLen = 2^13;
 % winLen: 128, 512
 winLen = 128;
 % Default Window: [ Window=hann(128,"periodic") ]
@@ -82,7 +86,7 @@ if STFTplotOn == 1
     fontsize(gca,30,"points")
     plotTitle = "Goldfinch Spectrogram; L = " + num2str(fftLen) + "; " + "L_{win}" + " = " + ...
                    num2str(winLen);
-    % title(plotTitle)
+    title(plotTitle)
     hold off
 end
 
@@ -125,33 +129,37 @@ wHSmag = abs(wHS);
 
 %% Generate and Plot Morse Wavelet example
 
-% Wavelet filterbank for loaded signal
-% Morse [beta,gamma]
-fb = cwtfilterbank('Wavelet', 'Morse', 'SignalLength', 508800, ...
-                     'WaveletParameters',[3,60],'VoicesPerOctave',48);
-% Wavelets in time domain for all in filterbank
-[psiWav, tWav] = wavelets(fb);
+if genFiltBank == 1
 
-% Plot selected Morse wavelet from filterbank
-figure('WindowState','maximized','Color','white')
-% Choose wavelet no. to plot (Max = 770)
-indWav = 700;
-realWav = real(psiWav(indWav,:));
-imagWav = imag(psiWav(indWav,:));
-magWav = sqrt(realWav.^2 + imagWav.^2);
-maxAmp = magWav(length(magWav)/2);
+    % Wavelet filterbank for loaded signal
+    % Morse [beta,gamma]
+    fb = cwtfilterbank('Wavelet', 'Morse', 'SignalLength', 508800, ...
+                         'WaveletParameters',[3,60],'VoicesPerOctave',48);
+    % Wavelets in time domain for all in filterbank
+    [psiWav, tWav] = wavelets(fb);
+    
+    % Plot selected Morse wavelet from filterbank
+    figure('WindowState','maximized','Color','white')
+    % Choose wavelet no. to plot (Max = 770)
+    indWav = 700;
+    realWav = real(psiWav(indWav,:));
+    imagWav = imag(psiWav(indWav,:));
+    magWav = sqrt(realWav.^2 + imagWav.^2);
+    maxAmp = magWav(length(magWav)/2);
+    
+    plot(tWav, realWav, 'r', 'LineWidth', 2)
+    hold on
+    plot(tWav, imagWav, 'b', 'LineWidth', 2)
+    plot(tWav, magWav, 'k', 'LineWidth', 2);
+    scatter(0,maxAmp,100,'black','filled');
+    text(100,maxAmp+3e-5,'Pk_{60,3}','FontSize',20)
+    % title('Morse (3,60) Wavelet in the Time Domain: s = 700, v = 48');
+    legend('Real Part', 'Imaginary Part','Magnitude');
+    xlabel('Time Sample Index')
+    ylabel('Magnitude')
+    % ylim([-8e-4 8e-4])
+    fontsize(gca,30,"points")
 
-plot(tWav, realWav, 'r', 'LineWidth', 2)
-hold on
-plot(tWav, imagWav, 'b', 'LineWidth', 2)
-plot(tWav, magWav, 'k', 'LineWidth', 2);
-scatter(0,maxAmp,100,'black','filled');
-text(100,maxAmp+3e-5,'Pk_{60,3}','FontSize',20)
-% title('Morse (3,60) Wavelet in the Time Domain: s = 700, v = 48');
-legend('Real Part', 'Imaginary Part','Magnitude');
-xlabel('Time Sample Index')
-ylabel('Magnitude')
-% ylim([-8e-4 8e-4])
-fontsize(gca,30,"points")
+end
 
 toc
